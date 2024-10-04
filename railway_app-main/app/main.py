@@ -7,7 +7,7 @@ from authlib.integrations.starlette_client import OAuth, OAuthError
 from .config import CLIENT_ID, CLIENT_SECRET
 from fastapi.staticfiles import StaticFiles
 
-from app.database.models import UserRepo
+from app.database.models import UserRepo,UserModel
 from app.database import db
 
 
@@ -62,6 +62,17 @@ async def login(request: Request):
     return await oauth.google.authorize_redirect(request, url)
 
 
+
+def login_check_and_creation(user):
+    
+    #checking email already is there or not
+    email_exist = db_insertion.query(UserModel).filter(UserModel.email == user['email']).first() 
+    
+    #adding to DB if email is not there
+    if not  email_exist:
+        UserRepo.create(db=db_insertion, user=user) 
+    return 'success'
+
 @app.get('/auth')
 async def auth(request: Request):
     try:
@@ -73,8 +84,8 @@ async def auth(request: Request):
         )
     user = token.get('userinfo')
     if user:
-        request.session['user'] = dict(user)
-        UserRepo.create(db=db_insertion, user=user) #adding to DB
+        request.session['user'] = dict(user)        
+        login_check_and_creation(user)
     return RedirectResponse('welcome')
 
 
@@ -83,3 +94,4 @@ def logout(request: Request):
     request.session.pop('user')
     request.session.clear()
     return RedirectResponse('/')
+
