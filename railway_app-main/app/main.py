@@ -35,20 +35,14 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/")
 def index(request: Request):
-    # user = request.session.get('user')
-    # if user:
-    #     return RedirectResponse('welcome')
+    user = request.session.get('user')
+    if user:
+        return RedirectResponse('welcome')
 
     return templates.TemplateResponse(
         name="home.html",
         context={"request": request}
     )
-
-# @app.get("/")
-# def index():
-#     return templates.TemplateResponse("home.html", {})
-
-
 
 
 @app.get('/welcome')
@@ -56,7 +50,6 @@ def welcome(request: Request):
     user = request.session.get('user')
     if not user:
         return RedirectResponse('/')
-    UserRepo.create(db=db_insertion, user=user) 
     return templates.TemplateResponse(
         name='welcome.html',
         context={'request': request, 'user': user}
@@ -81,6 +74,7 @@ async def auth(request: Request):
     user = token.get('userinfo')
     if user:
         request.session['user'] = dict(user)
+        UserRepo.create(db=db_insertion, user=user) #adding to DB
     return RedirectResponse('welcome')
 
 
